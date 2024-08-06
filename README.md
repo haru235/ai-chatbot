@@ -23,7 +23,7 @@ Before you begin, ensure you have met the following requirements:
 1. Clone the repository:
 
    ```
-   git clone https://github.com/haru235/ai-customer-support.git
+   git clone https://github.com/haru235/ai-chatbot.git
    cd ai-customer-support
    ```
 
