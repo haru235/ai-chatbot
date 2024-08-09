@@ -401,7 +401,7 @@ export default function Home() {
                 <Box key={index} sx={{ borderRadius: 1, bgcolor: "action.hover", p: 2 }}>
                   <Typography variant="subtitle2">Source: {context.metadata?.source}</Typography>
                   <Typography variant="subtitle2">Match: {Math.round(context.similarity * 100)}%</Typography>
-                  <Typography variant="body2">"{context.content}"</Typography>
+                  <Typography variant="body2">&quot;{context.content}&quot;</Typography>
                 </Box>
               ))}
             </Stack>
