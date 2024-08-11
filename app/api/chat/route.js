@@ -23,15 +23,15 @@ export async function POST(req) {
     async start(controller) {
       try {
         // Parse JSON body of the request to extract messages and query
-        const { messages, query, useOnlyMyContext, userId } = await req.json();
-        console.log("Received request:", { messages, query, useOnlyMyContext, userId });
+        const { messages, query, useOnlyMyContext, userId, language } = await req.json();
+        console.log("Received request:", { messages, query, useOnlyMyContext, userId, language });
 
         // Call Supabase RPC function to match documents based on the query embedding
-        let { data: documents, error } = await supabase.rpc("match_documents", {
+        const { data: documents, error } = await supabase.rpc("match_documents", {
           query_embedding: await getEmbedding(query), // Get embedding for the query text
           match_threshold: 0.78, // Threshold for document matching
           match_count: 5, // Number of documents to return
-          user_id: useOnlyMyContext?userId:null,
+          user_id: useOnlyMyContext ? userId : null,
         });
 
         // Handle errors during document retrieval
@@ -47,7 +47,7 @@ export async function POST(req) {
         // Combine the contents of all matched documents into a single context string
         const context = documents.map(doc => doc.content).join("\n\n");
         // Create a system prompt incorporating the context for the AI to generate a response
-        const systemPrompt = `Context: ${context}\nAnswer based on this context:`;
+        const systemPrompt = `Context: ${context}\nAnswer based on this context. If no context, answer normally. Respond in ${language}.`;
 
         // Generate a streaming completion using OpenAI's API
         const completionStream = await openai.chat.completions.create({

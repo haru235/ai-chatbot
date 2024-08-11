@@ -69,7 +69,7 @@ async function processUrlInput(url, userId, controller, encoder) {
     try {
         // Delete any existing documents associated with the URL and user
         await deleteExistingDocuments(url, userId);
-        
+
         let documentCount = 0;
         let totalDocuments = 0;
 
@@ -131,6 +131,7 @@ async function processDocument(document, userId) {
 
 // Insert a document with its embedding and metadata into the Supabase database
 async function insertDocument(content, embedding, metadata) {
+    if (content.split(" ").length < 2) return;
     const { error } = await supabase
         .from("documents")
         .insert({ content, embedding, metadata });
@@ -161,198 +162,212 @@ async function getEmbedding(text) {
 function splitTextIntoDocuments(text, maxSize, overlap) {
     // Ensure overlap is less than maxSize
     overlap = Math.min(overlap, maxSize - 1);
-  
+
     const sentences = text.match(/[^.!?]+[.!?]+|\S+/g) || [];
     const documents = [];
     let currentDoc = '';
-  
+
     for (let i = 0; i < sentences.length; i++) {
-      let sentence = sentences[i].trim();
-      
-      while (sentence.length > maxSize) {
-        // If a single sentence is longer than maxSize, split it
-        const chunk = sentence.slice(0, maxSize);
-        const lastSpaceIndex = chunk.lastIndexOf(' ');
-        
-        if (lastSpaceIndex > 0) {
-          documents.push(chunk.slice(0, lastSpaceIndex).trim());
-          sentence = sentence.slice(lastSpaceIndex).trim();
-        } else {
-          // If there's no space, just split at maxSize
-          documents.push(chunk);
-          sentence = sentence.slice(maxSize).trim();
+        let sentence = sentences[i].trim();
+
+        while (sentence.length > maxSize) {
+            // If a single sentence is longer than maxSize, split it
+            const chunk = sentence.slice(0, maxSize);
+            const lastSpaceIndex = chunk.lastIndexOf(' ');
+
+            if (lastSpaceIndex > 0) {
+                documents.push(chunk.slice(0, lastSpaceIndex).trim());
+                sentence = sentence.slice(lastSpaceIndex).trim();
+            } else {
+                // If there's no space, just split at maxSize
+                documents.push(chunk);
+                sentence = sentence.slice(maxSize).trim();
+            }
         }
-      }
-      
-      // Process the (remaining) sentence
-      if (currentDoc.length + sentence.length > maxSize) {
-        if (currentDoc.length > 0) {
-          documents.push(currentDoc.trim());
-          
-          // Create overlap
-          const words = currentDoc.split(' ');
-          currentDoc = '';
-          let overlapSize = 0;
-          
-          while (words.length > 0 && overlapSize < overlap) {
-            const word = words.pop();
-            currentDoc = word + ' ' + currentDoc;
-            overlapSize += word.length + 1;
-          }
+
+        // Process the (remaining) sentence
+        if (currentDoc.length + sentence.length > maxSize) {
+            if (currentDoc.length > 0) {
+                documents.push(currentDoc.trim());
+
+                // Create overlap
+                const words = currentDoc.split(' ');
+                currentDoc = '';
+                let overlapSize = 0;
+
+                while (words.length > 0 && overlapSize < overlap) {
+                    const word = words.pop();
+                    currentDoc = word + ' ' + currentDoc;
+                    overlapSize += word.length + 1;
+                }
+            }
         }
-      }
-      
-      currentDoc += sentence + ' ';
+
+        currentDoc += sentence + ' ';
     }
-  
+
     // Add the last document if it's not empty
     if (currentDoc.trim().length > 0) {
-      documents.push(currentDoc.trim());
+        documents.push(currentDoc.trim());
     }
-  
+
     return documents;
 }
 
 // Fetch HTML content from a URL, retrying if necessary
 async function fetchWebContent(url, maxRetries = 3, retryDelay = 1000) {
-  let attempt = 0;
+    let attempt = 0;
 
-  while (attempt < maxRetries) {
-    try {
-      const response = await axios.get(url);
-      return response.data;
-    } catch (error) {
-      attempt++;
-      console.error(`Error fetching ${url} (attempt ${attempt}):`, error.message);
+    while (attempt < maxRetries) {
+        try {
+            const response = await axios.get(url);
+            return response.data;
+        } catch (error) {
+            attempt++;
+            console.error(`Error fetching ${url} (attempt ${attempt}):`, error.message);
 
-      if (attempt >= maxRetries) {
-        throw new Error(`Failed to fetch ${url} after ${maxRetries} attempts: ${error.message}`);
-      }
+            if (attempt >= maxRetries) {
+                throw new Error(`Failed to fetch ${url} after ${maxRetries} attempts: ${error.message}`);
+            }
 
-      // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+        }
     }
-  }
 }
 
 // Parse HTML content and yield text elements like headers, paragraphs, and list items
 function* processHTML(html) {
-  // Parse the HTML content
-  const root = parse(html);
-  // Query for relevant elements: headers, paragraphs, and list items
-  const elements = root.querySelectorAll('h1, h2, h3, h4, h5, h6, p, li');
-  // Iterate over the selected elements
-  for (const element of elements) {
-    // Convert the tag name to lowercase
-    const tagName = element.tagName.toLowerCase();
-    // Trim and clean the text content
-    const text = element.text.trim();
-    // Only yield non-empty text
-    if (text) {
-      yield { tag: tagName, text };
+    // Parse the HTML content
+    const root = parse(html);
+
+    // Extract the title of the page
+    const titleElement = root.querySelector('title');
+    const title = titleElement ? titleElement.text.trim() : 'No Title';
+    yield { tag: 'title', text: title };
+
+    // Query for relevant elements: headers, paragraphs, and list items
+    const elements = root.querySelectorAll('h1, h2, h3, h4, h5, h6, p, li');
+
+    // Iterate over the selected elements
+    for (const element of elements) {
+        // Convert the tag name to lowercase
+        const tagName = element.tagName.toLowerCase();
+        // Trim and clean the text content
+        const text = element.text.trim().replace(/\s+/g, ' ');
+        // Only yield non-empty text
+        if (text) {
+            yield { tag: tagName, text };
+        }
     }
-  }
 }
 
 // Generate documents from a URL by splitting and organizing content
 export async function* generateDocumentsFromUrl(url) {
     const html = await fetchWebContent(url);
     const processedContent = processHTML(html);
-  
+
     let currentDocument = '';
+    let headingStack = [];
     let isNewSection = true;
-  
+
     for (const { tag, text } of processedContent) {
-      if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) {
-        // Yield the current document if it has content
-        if (currentDocument.trim()) {
-            for (const doc of splitTextIntoDocuments(currentDocument.trim(), 2000, 200)) {
-                yield {
-                  content: doc,
-                  metadata: { source: url },
-                };
-              }
-              currentDocument = '';
+        if (tag === 'title') {
+            // Set the title as the initial heading
+            headingStack = [text];
+        } else if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) {
+
+            // Yield the current document if it has content
+            if (currentDocument.trim()) {
+                for (const doc of splitTextIntoDocuments(currentDocument.trim(), 2000, 200)) {
+                    yield {
+                        content: headingStack.join(" > ") + " => " + doc,
+                        metadata: { source: url },
+                    };
+                }
+                currentDocument = '';
             }
             // Mark as a new section
             isNewSection = true;
-          }
-    
-          // If it's a new section or a continuation of the current document, add the text
-          currentDocument += isNewSection ? `${text}\n` : ` ${text}`;
-          isNewSection = false;
+            // Update the heading stack based on the heading level
+            headingStack = headingStack.slice(0, parseInt(tag.charAt(1))).concat(text);
         }
-    
-        // Yield any remaining content as a final document
-        if (currentDocument.trim()) {
-          for (const doc of splitTextIntoDocuments(currentDocument.trim(), 2000, 200)) {
+
+        // Add text to the current document
+        currentDocument += isNewSection ? '' : ` ${text}`;
+        isNewSection = false;
+    }
+
+    // Yield any remaining content as a final document
+    if (currentDocument.trim()) {
+        for (const doc of splitTextIntoDocuments(currentDocument.trim(), 2000, 200)) {
             yield {
-              content: doc,
-              metadata: { source: url },
+                content: headingStack.join(" > ") + " => " + doc,
+                metadata: { source: url },
             };
-          }
         }
     }
-      
-    // Process input when it's plain text
-    async function processTextInput(text, userName, userId, controller, encoder) {
-        console.log(`Adding context from text provided by ${userName}`);
-        try {
-            let documentCount = 0;
-            let totalDocuments = 0;
-    
-            // First pass: count the total number of documents
-            for await (const _ of generateDocumentsFromText(text, userName)) {
-                totalDocuments++;
+}
+
+// Process input when it's plain text
+async function processTextInput(text, userName, userId, controller, encoder) {
+    console.log(`Adding context from text provided by ${userName}`);
+    try {
+        let documentCount = 0;
+        let totalDocuments = 0;
+
+        // First pass: count the total number of documents
+        for await (const _ of generateDocumentsFromText(text, userName)) {
+            totalDocuments++;
+        }
+
+        // Second pass: process and embed each document
+        for await (const document of generateDocumentsFromText(text, userName)) {
+            try {
+                await processDocument(document, userId);
+                documentCount++;
+                // Update the client with progress
+                controller.enqueue(encoder.encode(JSON.stringify({ percentage: Math.round(documentCount / totalDocuments * 100) }) + '\n'));
+            } catch (docError) {
+                console.log(`Error processing document ${documentCount + 1}:`, docError);
             }
-    
-            // Second pass: process and embed each document
-            for await (const document of generateDocumentsFromText(text, userName)) {
-                try {
-                    await processDocument(document, userId);
-                    documentCount++;
-                    // Update the client with progress
-                    controller.enqueue(encoder.encode(JSON.stringify({ percentage: Math.round(documentCount / totalDocuments * 100) }) + '\n'));
-                } catch (docError) {
-                    console.log(`Error processing document ${documentCount + 1}:`, docError);
+        }
+        console.log(`Total documents processed and embedded: ${documentCount}`);
+    } catch (error) {
+        console.error("Error processing text input:", error);
+        throw error;
+    }
+}
+
+// Generate documents from plain text by splitting and organizing content
+export async function* generateDocumentsFromText(text, userName) {
+    let currentDocument = '';
+    const lines = text.split('\n');
+
+    for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (trimmedLine) {
+            // Start a new document if the current one is too long
+            if (currentDocument.length + trimmedLine.length > 2000) {
+                for (const doc of splitTextIntoDocuments(currentDocument, 2000, 200)) {
+                    yield {
+                        content: doc,
+                        metadata: { source: userName },
+                    };
                 }
+                currentDocument = '';
             }
-            console.log(`Total documents processed and embedded: ${documentCount}`);
-        } catch (error) {
-            console.error("Error processing text input:", error);
-            throw error;
+            currentDocument += `${trimmedLine}\n`;
         }
     }
-    
-    // Generate documents from plain text by splitting and organizing content
-    export async function* generateDocumentsFromText(text, userName) {
-        let currentDocument = '';
-        const lines = text.split('\n');
-    
-        for (const line of lines) {
-            const trimmedLine = line.trim();
-            if (trimmedLine) {
-                // Start a new document if the current one is too long
-                if (currentDocument.length + trimmedLine.length > 2000) {
-                    for (const doc of splitTextIntoDocuments(currentDocument, 2000, 200)) {
-                        yield {
-                            content: doc,
-                            metadata: { source: userName },
-                        };
-                    }
-                    currentDocument = '';
-                }
-                currentDocument += `${trimmedLine}\n`;
-            }
-        }
-    
-        // Yield any remaining content as a final document
-        if (currentDocument.trim()) {
-            for (const doc of splitTextIntoDocuments(currentDocument.trim(), 2000, 200)) {
-                yield {
-                    content: doc,
-                    metadata: { source: userName },
-                };
-            }
+
+    // Yield any remaining content as a final document
+    if (currentDocument.trim()) {
+        for (const doc of splitTextIntoDocuments(currentDocument.trim(), 2000, 200)) {
+            yield {
+                content: doc,
+                metadata: { source: userName },
+            };
         }
     }
+}
