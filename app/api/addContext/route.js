@@ -159,7 +159,7 @@ async function getEmbedding(text) {
 }
 
 // Split text into smaller documents with a specified max size and overlap
-function splitTextIntoDocuments(text, maxSize, overlap) {
+function splitTextIntoDocuments(text, maxSize = 1000, overlap=250) {
     // Ensure overlap is less than maxSize
     overlap = Math.min(overlap, maxSize - 1);
 
@@ -279,7 +279,7 @@ export async function* generateDocumentsFromUrl(url) {
 
             // Yield the current document if it has content
             if (currentDocument.trim()) {
-                for (const doc of splitTextIntoDocuments(currentDocument.trim(), 2000, 200)) {
+                for (const doc of splitTextIntoDocuments(currentDocument.trim())) {
                     yield {
                         content: headingStack.join(" > ") + " => " + doc,
                         metadata: { source: url },
@@ -300,7 +300,7 @@ export async function* generateDocumentsFromUrl(url) {
 
     // Yield any remaining content as a final document
     if (currentDocument.trim()) {
-        for (const doc of splitTextIntoDocuments(currentDocument.trim(), 2000, 200)) {
+        for (const doc of splitTextIntoDocuments(currentDocument.trim())) {
             yield {
                 content: headingStack.join(" > ") + " => " + doc,
                 metadata: { source: url },
@@ -349,7 +349,7 @@ export async function* generateDocumentsFromText(text, userName) {
         if (trimmedLine) {
             // Start a new document if the current one is too long
             if (currentDocument.length + trimmedLine.length > 2000) {
-                for (const doc of splitTextIntoDocuments(currentDocument, 2000, 200)) {
+                for (const doc of splitTextIntoDocuments(currentDocument)) {
                     yield {
                         content: doc,
                         metadata: { source: userName },
@@ -363,7 +363,7 @@ export async function* generateDocumentsFromText(text, userName) {
 
     // Yield any remaining content as a final document
     if (currentDocument.trim()) {
-        for (const doc of splitTextIntoDocuments(currentDocument.trim(), 2000, 200)) {
+        for (const doc of splitTextIntoDocuments(currentDocument.trim())) {
             yield {
                 content: doc,
                 metadata: { source: userName },
