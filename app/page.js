@@ -9,7 +9,9 @@ import {
   Modal,
   Tooltip,
   IconButton,
-  Chip
+  Chip,
+  ThemeProvider,
+  createTheme
 } from '@mui/material'; // MUI components for UI
 import { useState, useEffect, useRef, useCallback } from "react"; // React hooks
 import { initializeApp } from "firebase/app"; // Firebase initialization
@@ -37,6 +39,27 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// Create a custom theme
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#9c27b0',
+    },
+    secondary: {
+      main: '#7c4dff',
+    },
+    background: {
+      default: '#121212',
+      paper: '#1E1E1E',
+    },
+    text: {
+      primary: '#ffffff',
+      secondary: '#b3b3b3',
+    },
+  },
+});
 
 export default function Home() {
   // State variables
@@ -255,206 +278,319 @@ export default function Home() {
   }));
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: 'background.default', p: 3 }}>
-      <Paper elevation={3} sx={{ m: 'auto', width: '100%', maxWidth: '1200px', overflow: 'hidden' }}>
-        <Grid container>
-          <Grid item xs={12} sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Box display={"flex"} flexDirection={"row"} alignContent={"center"}>
-                <Typography variant="h5" component="h1">Chatbot Trainer</Typography>
-                <Tooltip title="How to use">
-                  <IconButton
-                    onClick={() => setInfoOpen(true)}
-                    color="primary"
-                  >
-                    <Info />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-              {user && (
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Chip label={user.displayName} sx={{ mr: 2 }} />
-                  <Button
-                    variant="outlined"
-                    onClick={signOutUser}
-                    startIcon={<Logout />}
-                  >
-                    Sign Out
-                  </Button>
+    <ThemeProvider theme={darkTheme}>
+      <Box sx={{ 
+        display: 'flex', 
+        height: '100vh', 
+        bgcolor: 'background.default', 
+        p: 3,
+        background: 'linear-gradient(45deg, #121212 30%, #1a237e 90%)',
+        boxShadow: 'inset 0 0 100px rgba(156, 39, 176, 0.3)'  // Purple ambient lighting
+      }}>
+        <Paper elevation={3} sx={{ 
+          m: 'auto', 
+          width: '100%', 
+          maxWidth: '1200px', 
+          overflow: 'hidden',
+          bgcolor: 'rgba(30, 30, 30, 0.8)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '15px',
+        }}>
+          <Grid container>
+            <Grid item xs={12} sx={{ p: 2, borderBottom: 1, borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box display="flex" flexDirection="row" alignItems="center">
+                  <Typography variant="h5" component="h1" sx={{ color: '#b388ff' }}>ConvoCraft</Typography>
+                  <Tooltip title="How to use">
+                    <IconButton onClick={() => setInfoOpen(true)} color="secondary">
+                      <Info />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
-              )}
-            </Box>
-          </Grid>
-          {!user ? (
-            <Grid item xs={12} sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh' }}>
-              <Typography variant="h6" gutterBottom>Welcome to Chatbot Trainer</Typography>
-              <Typography variant="body1" gutterBottom sx={{ textAlign: 'center', maxWidth: '600px', mb: 3 }}>
-                Sign in to start training your chatbot, manage context, and engage in conversations.
-              </Typography>
-              <Button
-                variant="contained"
-                onClick={signIn}
-                startIcon={<Login />}
-                size="large"
-              >
-                Sign In with Google
-              </Button>
-            </Grid>
-          ) : (
-            <>
-              <Grid item xs={12} md={7} sx={{ p: 3, display: 'flex', flexDirection: 'column', height: 'calc(80vh - 64px)' }}>                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Autocomplete
-                  options={Object.entries(languages.getNames('en')).map(([code, name]) => ({ code, name }))}
-                  getOptionLabel={(option) => option.name}
-                  value={language}
-                  onChange={(_, newValue) => setLanguage(newValue)}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Select Language"
+                {user && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Chip label={"Hello, " + user.displayName} sx={{ mr: 2, bgcolor: 'rgba(156, 39, 176, 0.2)' }} />
+                    <Button
                       variant="outlined"
-                    />
-                  )}
-                  sx={{ width: 200 }}
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={useOnlyMyContext}
-                      onChange={(e) => setUseOnlyMyContext(e.target.checked)}
-                    />
-                  }
-                  label="Only use my context"
-                />
-              </Box>
-                <Box sx={{ flexGrow: 1, overflowY: 'auto', mb: 2, bgcolor: 'grey.100', p: 2, borderRadius: 1 }}>
-                  {messages.map((msg, index) => (
-                    <Box
-                      key={index}
-                      sx={{
-                        display: 'flex',
-                        justifyContent: msg.role === 'assistant' ? 'flex-start' : 'flex-end',
-                        mb: 1
-                      }}
+                      onClick={signOutUser}
+                      startIcon={<Logout />}
+                      sx={{ borderColor: '#b388ff', color: '#b388ff' }}
                     >
-                      <Paper
-                        elevation={1}
+                      Sign Out
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+            </Grid>
+            {!user ? (
+              <Grid item xs={12} sx={{ 
+                p: 3, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                height: '80vh',
+                background: 'linear-gradient(135deg, rgba(156, 39, 176, 0.1) 0%, rgba(124, 77, 255, 0.1) 100%)',
+              }}>
+                <Typography variant="h6" gutterBottom sx={{ color: '#b388ff' }}>Welcome to ConvoCraft</Typography>
+                <Typography variant="body1" gutterBottom sx={{ textAlign: 'center', maxWidth: '600px', mb: 3, color: '#e1bee7' }}>
+                  Sign in to start training your chatbot, manage context, and engage in conversations.
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={signIn}
+                  startIcon={<Login />}
+                  size="large"
+                  sx={{ 
+                    bgcolor: '#7c4dff',
+                    '&:hover': {
+                      bgcolor: '#651fff',
+                    }
+                  }}
+                >
+                  Sign In with Google
+                </Button>
+              </Grid>
+            ) : (
+              <>
+                <Grid item xs={12} md={7} sx={{ p: 3, display: 'flex', flexDirection: 'column', height: 'calc(80vh - 64px)' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                    <Autocomplete
+                      options={Object.entries(languages.getNames('en')).map(([code, name]) => ({ code, name }))}
+                      getOptionLabel={(option) => option.name}
+                      value={language}
+                      onChange={(_, newValue) => setLanguage(newValue)}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Select Language"
+                          variant="outlined"
+                          sx={{ 
+                            width: 200,
+                            '& .MuiOutlinedInput-root': {
+                              '& fieldset': {
+                                borderColor: 'rgba(179, 136, 255, 0.5)',
+                              },
+                              '&:hover fieldset': {
+                                borderColor: '#b388ff',
+                              },
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={useOnlyMyContext}
+                          onChange={(e) => setUseOnlyMyContext(e.target.checked)}
+                          sx={{
+                            color: '#b388ff',
+                            '&.Mui-checked': {
+                              color: '#7c4dff',
+                            },
+                          }}
+                        />
+                      }
+                      label="Only use my context"
+                    />
+                  </Box>
+                  <Box sx={{ flexGrow: 1, overflowY: 'auto', mb: 2, bgcolor: 'rgba(30, 30, 30, 0.6)', p: 2, borderRadius: 2 }}>
+                    {messages.map((msg, index) => (
+                      <Box
+                        key={index}
                         sx={{
-                          p: 1,
-                          maxWidth: '80%',
-                          bgcolor: msg.role === 'assistant' ? 'primary.light' : 'secondary.light'
+                          display: 'flex',
+                          justifyContent: msg.role === 'assistant' ? 'flex-start' : 'flex-end',
+                          mb: 1
                         }}
                       >
-                        <Typography variant="body2">{msg.content}</Typography>
-                      </Paper>
-                    </Box>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </Box>
-                <Box sx={{ display: 'flex' }}>
+                        <Paper
+                          elevation={1}
+                          sx={{
+                            p: 1,
+                            maxWidth: '80%',
+                            bgcolor: msg.role === 'assistant' ? 'rgba(156, 39, 176, 0.2)' : 'rgba(124, 77, 255, 0.2)',
+                            borderRadius: '10px',
+                          }}
+                        >
+                          <Typography variant="body2">{msg.content}</Typography>
+                        </Paper>
+                      </Box>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </Box>
+                  <Box sx={{ display: 'flex' }}>
+                    <TextField
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Type your message..."
+                      fullWidth
+                      variant="outlined"
+                      disabled={isLoading}
+                      sx={{ 
+                        mr: 1,
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: 'rgba(179, 136, 255, 0.5)',
+                          },
+                          '&:hover fieldset': {
+                            borderColor: '#b388ff',
+                          },
+                        },
+                      }}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={sendMessage}
+                      disabled={isLoading}
+                      sx={{ 
+                        minWidth: 0, 
+                        width: 56, 
+                        height: 56,
+                        bgcolor: '#7c4dff',
+                        '&:hover': {
+                          bgcolor: '#651fff',
+                        }
+                      }}
+                    >
+                      {isLoading ? <CircularProgress size={24} /> : <Send />}
+                    </Button>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} md={5} sx={{ 
+                  bgcolor: 'rgba(30, 30, 30, 0.6)', 
+                  p: 3, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  height: 'calc(80vh - 64px)',
+                  borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+                }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={isUrl}
+                        onChange={(e) => {
+                          setIsUrl(e.target.checked);
+                          setNewContext('');
+                        }}
+                        sx={{
+                          color: '#b388ff',
+                          '&.Mui-checked': {
+                            color: '#7c4dff',
+                          },
+                        }}
+                      />
+                    }
+                    label="Add Website"
+                    sx={{ mb: 2 }}
+                  />
                   <TextField
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Type your message..."
+                    label={isUrl ? "Enter URL" : "Enter Context"}
+                    value={newContext}
+                    onChange={(e) => setNewContext(e.target.value)}
+                    multiline={!isUrl}
+                    rows={isUrl ? 1 : 4}
                     fullWidth
                     variant="outlined"
-                    disabled={isLoading}
-                    sx={{ mr: 1 }}
+                    sx={{ 
+                      mb: 2,
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                          borderColor: 'rgba(179, 136, 255, 0.5)',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: '#b388ff',
+                        },
+                      },
+                    }}
                   />
                   <Button
                     variant="contained"
-                    onClick={sendMessage}
+                    onClick={handleAddContext}
                     disabled={isLoading}
-                    sx={{ minWidth: 0, width: 56, height: 56 }}
+                    startIcon={<Add />}
+                    sx={{ 
+                      mb: 2,
+                      bgcolor: '#7c4dff',
+                      '&:hover': {
+                        bgcolor: '#651fff',
+                      }
+                    }}
                   >
-                    {isLoading ? <CircularProgress size={24} /> : <Send />}
+                    {isLoading ? 'Adding...' : 'Add Context'}
                   </Button>
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={5} sx={{ bgcolor: 'grey.100', p: 3, display: 'flex', flexDirection: 'column', height: 'calc(80vh - 64px)' }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={isUrl}
-                      onChange={(e) => {
-                        setIsUrl(e.target.checked);
-                        setNewContext('');
-                      }}
+                  {addingContextProgress > 0 && (
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={addingContextProgress} 
+                      sx={{ 
+                        mb: 2, 
+                        height: 8, 
+                        borderRadius: 4,
+                        bgcolor: 'rgba(124, 77, 255, 0.2)',
+                        '& .MuiLinearProgress-bar': {
+                          bgcolor: '#7c4dff',
+                        }
+                      }} 
                     />
-                  }
-                  label="Add Website"
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  label={isUrl ? "Enter URL" : "Enter Context"}
-                  value={newContext}
-                  onChange={(e) => setNewContext(e.target.value)}
-                  multiline={!isUrl}
-                  rows={isUrl ? 1 : 4}
-                  fullWidth
-                  variant="outlined"
-                  sx={{ mb: 2 }}
-                />
-                <Button
-                  variant="contained"
-                  onClick={handleAddContext}
-                  disabled={isLoading}
-                  startIcon={<Add />}
-                  sx={{ mb: 2 }}
-                >
-                  {isLoading ? 'Adding...' : 'Add Context'}
-                </Button>
-                {addingContextProgress > 0 && (
-                  <LinearProgress variant="determinate" value={addingContextProgress} height={3} />
-                )}
-                <Divider sx={{ mb: 2 }} />
-                <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    {contextUsed.length > 0 ? `${contextUsed.length} Documents Matched:` : 'No Matched Documents'}
-                  </Typography>
-                  {contextUsed.map((context, index) => (
-                    <Paper key={index} elevation={1} sx={{ p: 2, mb: 2 }}>
-                      <Typography variant="subtitle2">Source: {context.metadata?.source} ({Math.round(context.similarity * 100)}% Match)</Typography>
-                      <Typography variant="body2" sx={{ mt: 1 }}>&quot;{context.content}&quot;</Typography>
-                    </Paper>
-                  ))}
-                </Box>
-              </Grid>
-            </>
-          )}
-        </Grid>
-      </Paper>
+                  )}
+                  <Divider sx={{ mb: 2, bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
+                  <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+                    <Typography variant="subtitle1" gutterBottom sx={{ color: '#b388ff' }}>
+                      {contextUsed.length > 0 ? `${contextUsed.length} Documents Matched:` : 'No Matched Documents'}
+                    </Typography>
+                    {contextUsed.map((context, index) => (
+                      <Paper key={index} elevation={1} sx={{ 
+                        p: 2, 
+                        mb: 2, 
+                        bgcolor: 'rgba(124, 77, 255, 0.1)',
+                        borderRadius: '10px',
+                      }}>
+                        <Typography variant="subtitle2" sx={{ color: '#e1bee7' }}>Source: {context.metadata?.source} ({Math.round(context.similarity * 100)}% Match)</Typography>
+                        <Typography variant="body2" sx={{ mt: 1 }}>&quot;{context.content}&quot;</Typography>
+                      </Paper>
+                    ))}
+                  </Box>
+                </Grid>
+              </>
+            )}
+          </Grid>
+        </Paper>
 
-      <Modal
-        open={infoOpen}
-        onClose={() => setInfoOpen(false)}
-        aria-labelledby="info-modal-title"
-        aria-describedby="info-modal-description"
-      >
-        <Box sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 400,
-          bgcolor: 'background.paper',
-          boxShadow: 24,
-          p: 4,
-          borderRadius: 2,
-        }}>
-          <Typography id="info-modal-title" variant="h6" component="h2" gutterBottom>
-            How to Use This Chatbot
-          </Typography>
-          <Typography id="info-modal-description" sx={{ mt: 2 }}>
-            1. Select your preferred language from the dropdown menu.<br />
-            2. Type your message in the text field at the bottom and click the send button.<br />
-            3. To add context, use the right panel. You can add text directly or provide a URL.<br />
-            4. Check &quot;Only use my context&quot; if you want the chatbot to use only your provided context.<br />
-            5. View matched documents in the right panel after sending a message.
-          </Typography>
-          <Button onClick={() => setInfoOpen(false)} sx={{ mt: 2 }}>Close</Button>
-        </Box>
-      </Modal>
-    </Box>
+        <Modal
+          open={infoOpen}
+          onClose={() => setInfoOpen(false)}
+          aria-labelledby="info-modal-title"
+          aria-describedby="info-modal-description"
+        >
+          <Box sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 400,
+            bgcolor: 'rgba(30, 30, 30, 0.9)',
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+            p: 4,
+            borderRadius: 2,
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+          }}>
+            <Typography id="info-modal-title" variant="h6" component="h2" gutterBottom sx={{ color: '#b388ff' }}>
+              How to Use This Chatbot
+            </Typography>
+            <Typography id="info-modal-description" sx={{ mt: 2, color: '#e1bee7' }}>
+              1. Select your preferred language from the dropdown menu.<br />
+              2. Type your message in the text field at the bottom and click the send button.<br />
+              3. To add context, use the right panel. You can add text directly or provide a URL.<br />
+              4. Check &quot;Only use my context&quot; if you want the chatbot to use only your provided context.<br />
+              5. View matched documents in the right panel after sending a message.
+            </Typography>
+            <Button onClick={() => setInfoOpen(false)} sx={{ mt: 2, color: '#b388ff' }}>Close</Button>
+          </Box>
+        </Modal>
+      </Box>
+    </ThemeProvider>
   );
 }
