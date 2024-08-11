@@ -47,11 +47,11 @@ export async function POST(req) {
         // Combine the contents of all matched documents into a single context string
         const context = documents.map(doc => doc.content).join("\n\n");
         // Create a system prompt incorporating the context for the AI to generate a response
-        const systemPrompt = `Context: ${context}\nAnswer based on this context\n If no context, answer using general knowledge.Always respond in ${language}, translating response if necessary.`;
+        const systemPrompt = `Context: ${context}\nAlways respond in ${language}. Translate your response to ${language}, regardless of the input language.`;
 
         // Generate a streaming completion using OpenAI's API
         const completionStream = await openai.chat.completions.create({
-          messages: [{ role: "system", content: systemPrompt }, ...messages],
+          messages: [{ role: "system", content: systemPrompt }, ...messages, {role: 'user',content:`Respond in ${language}`}],
           model: "gpt-4o-mini", // Specify the model to use for the completion
           stream: true, // Enable streaming for the response
         });
