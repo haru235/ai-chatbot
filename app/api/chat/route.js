@@ -47,7 +47,7 @@ export async function POST(req) {
         // Combine the contents of all matched documents into a single context string
         const context = documents.map(doc => doc.content).join("\n\n");
         // Create a system prompt incorporating the context for the AI to generate a response
-        const systemPrompt = `Context: ${context}\nAnswer based on this context. If no context, answer normally. Respond in ${language}.`;
+        const systemPrompt = `Context: ${context}\nAnswer based on this context\n If no context, answer using general knowledge.Always respond in ${language}, translating response if necessary.`;
 
         // Generate a streaming completion using OpenAI's API
         const completionStream = await openai.chat.completions.create({
