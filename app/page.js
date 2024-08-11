@@ -411,7 +411,7 @@ export default function Home() {
                   {contextUsed.map((context, index) => (
                     <Paper key={index} elevation={1} sx={{ p: 2, mb: 2 }}>
                       <Typography variant="subtitle2">Source: {context.metadata?.source} ({Math.round(context.similarity * 100)}% Match)</Typography>
-                      <Typography variant="body2" sx={{ mt: 1 }}>"{context.content}"</Typography>
+                      <Typography variant="body2" sx={{ mt: 1 }}>&quot;{context.content}&quot;</Typography>
                     </Paper>
                   ))}
                 </Box>
@@ -445,7 +445,7 @@ export default function Home() {
             1. Select your preferred language from the dropdown menu.
             2. Type your message in the text field at the bottom and click the send button.
             3. To add context, use the right panel. You can add text directly or provide a URL.
-            4. Check "Only use my context" if you want the chatbot to use only your provided context.
+            4. Check &quot;Only use my context&quot; if you want the chatbot to use only your provided context.
             5. View matched documents in the right panel after sending a message.
           </Typography>
           <Button onClick={() => setInfoOpen(false)} sx={{ mt: 2 }}>Close</Button>
