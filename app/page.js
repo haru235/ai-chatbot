@@ -65,7 +65,11 @@ export default function Home() {
 
   // Effect to auto-scroll to the latest message
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      setTimeout(() => {
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 0);
+    }
   }, [messages]);
 
   // Function to load messages from Firestore
