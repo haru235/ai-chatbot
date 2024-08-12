@@ -24,6 +24,7 @@ import {
 } from "firebase/firestore"; // Firebase Firestore functions
 import { Send, Add, Logout, Login, Info } from '@mui/icons-material'; // MUI conponents for Icons
 import languages from '@cospired/i18n-iso-languages' // Used to get languages
+import ReactMarkdown from 'react-markdown'; // For formatting response from openai
 
 // Firebase configuration with environment variables
 const firebaseConfig = {
@@ -194,8 +195,15 @@ export default function Home() {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // Prevents newline if Shift+Enter is not pressed
+      handleSendMessage();
+    }
+  };
+
   // Function to handle sending a message
-  const sendMessage = async () => {
+  const handleSendMessage = async () => {
     if (!user || !message.trim()) return;
 
     setIsLoading(true);
@@ -279,18 +287,18 @@ export default function Home() {
 
   return (
     <ThemeProvider theme={darkTheme}>
-      <Box sx={{ 
-        display: 'flex', 
-        height: '100vh', 
-        bgcolor: 'background.default', 
+      <Box sx={{
+        display: 'flex',
+        height: '100vh',
+        bgcolor: 'background.default',
         p: 3,
         background: 'linear-gradient(45deg, #121212 30%, #1a237e 90%)',
         boxShadow: 'inset 0 0 100px rgba(156, 39, 176, 0.3)'  // Purple ambient lighting
       }}>
-        <Paper elevation={3} sx={{ 
-          m: 'auto', 
-          width: '100%', 
-          maxWidth: '1200px', 
+        <Paper elevation={3} sx={{
+          m: 'auto',
+          width: '100%',
+          maxWidth: '1200px',
           overflow: 'hidden',
           bgcolor: 'rgba(30, 30, 30, 0.8)',
           backdropFilter: 'blur(10px)',
@@ -324,12 +332,12 @@ export default function Home() {
               </Box>
             </Grid>
             {!user ? (
-              <Grid item xs={12} sx={{ 
-                p: 3, 
-                display: 'flex', 
-                flexDirection: 'column', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
+              <Grid item xs={12} sx={{
+                p: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
                 height: '80vh',
                 background: 'linear-gradient(135deg, rgba(156, 39, 176, 0.1) 0%, rgba(124, 77, 255, 0.1) 100%)',
               }}>
@@ -342,7 +350,7 @@ export default function Home() {
                   onClick={signIn}
                   startIcon={<Login />}
                   size="large"
-                  sx={{ 
+                  sx={{
                     bgcolor: '#7c4dff',
                     '&:hover': {
                       bgcolor: '#651fff',
@@ -366,7 +374,7 @@ export default function Home() {
                           {...params}
                           label="Select Language"
                           variant="outlined"
-                          sx={{ 
+                          sx={{
                             width: 200,
                             '& .MuiOutlinedInput-root': {
                               '& fieldset': {
@@ -415,7 +423,66 @@ export default function Home() {
                             borderRadius: '10px',
                           }}
                         >
-                          <Typography variant="body2">{msg.content}</Typography>
+                          <ReactMarkdown components={{
+                            ol: ({ children }) => (
+                              <ol style={{ paddingLeft: '2rem', paddingTop: '1rem', paddingBottom: '.5rem'}}>
+                                {children}
+                              </ol>
+                            ),
+                            ul: ({ children }) => (
+                              <ul style={{ paddingLeft: '2rem', paddingTop: '1rem', paddingBottom: '.5rem'}}>
+                                {children}
+                              </ul>
+                            ),
+                            li: ({ children }) => (
+                              <li style={{ marginBottom: '0.5rem' }}>
+                                {children}
+                              </li>
+                            ),
+                            blockquote: ({ children }) => (
+                              <blockquote style={{ borderLeft: '4px solid #ddd', paddingLeft: '2rem', paddingTop: '1rem', paddingBottom: '1rem', color: '#aaa' }}>
+                                {children}
+                              </blockquote>
+                            ),
+                            code: ({ inline, children }) => (
+                              inline ? (
+                                <code style={{ backgroundColor: '#f5f5f5', padding: '2px 4px', borderRadius: '4px' }}>
+                                  {children}
+                                </code>
+                              ) : (
+                                <pre style={{ backgroundColor: '#333', padding: '1rem', borderRadius: '4px', color: '#f5f5f5' }}>
+                                  <code>
+                                    {children}
+                                  </code>
+                                </pre>
+                              )
+                            ),
+                            a: ({ href, children }) => (
+                              <a href={href} style={{ color: '#61dafb', textDecoration: 'none' }}>
+                                {children}
+                              </a>
+                            ),
+                            img: ({ alt, src }) => (
+                              <img alt={alt} src={src} style={{ maxWidth: '100%', borderRadius: '4px' }} />
+                            ),
+                            table: ({ children }) => (
+                              <div style={{ overflowX: 'auto', width: '100%' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                  {children}
+                                </table>
+                              </div>
+                            ),
+                            th: ({ children }) => (
+                              <th style={{ border: '1px solid #ddd', padding: '0.5rem', textAlign: 'left', backgroundColor: '#f5f5f5' }}>
+                                {children}
+                              </th>
+                            ),
+                            td: ({ children }) => (
+                              <td style={{ border: '1px solid #ddd', padding: '0.5rem', wordWrap: 'break-word' }}>
+                                {children}
+                              </td>
+                            ),
+                          }}>{msg.content}</ReactMarkdown>
                         </Paper>
                       </Box>
                     ))}
@@ -429,7 +496,8 @@ export default function Home() {
                       fullWidth
                       variant="outlined"
                       disabled={isLoading}
-                      sx={{ 
+                      onKeyDown={handleKeyDown}
+                      sx={{
                         mr: 1,
                         '& .MuiOutlinedInput-root': {
                           '& fieldset': {
@@ -443,11 +511,11 @@ export default function Home() {
                     />
                     <Button
                       variant="contained"
-                      onClick={sendMessage}
+                      onClick={handleSendMessage}
                       disabled={isLoading}
-                      sx={{ 
-                        minWidth: 0, 
-                        width: 56, 
+                      sx={{
+                        minWidth: 0,
+                        width: 56,
                         height: 56,
                         bgcolor: '#7c4dff',
                         '&:hover': {
@@ -459,11 +527,11 @@ export default function Home() {
                     </Button>
                   </Box>
                 </Grid>
-                <Grid item xs={12} md={5} sx={{ 
-                  bgcolor: 'rgba(30, 30, 30, 0.6)', 
-                  p: 3, 
-                  display: 'flex', 
-                  flexDirection: 'column', 
+                <Grid item xs={12} md={5} sx={{
+                  bgcolor: 'rgba(30, 30, 30, 0.6)',
+                  p: 3,
+                  display: 'flex',
+                  flexDirection: 'column',
                   height: 'calc(80vh - 64px)',
                   borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
                 }}>
@@ -494,7 +562,7 @@ export default function Home() {
                     rows={isUrl ? 1 : 4}
                     fullWidth
                     variant="outlined"
-                    sx={{ 
+                    sx={{
                       mb: 2,
                       '& .MuiOutlinedInput-root': {
                         '& fieldset': {
@@ -511,7 +579,7 @@ export default function Home() {
                     onClick={handleAddContext}
                     disabled={isLoading}
                     startIcon={<Add />}
-                    sx={{ 
+                    sx={{
                       mb: 2,
                       bgcolor: '#7c4dff',
                       '&:hover': {
@@ -522,18 +590,18 @@ export default function Home() {
                     {isLoading ? 'Adding...' : 'Add Context'}
                   </Button>
                   {addingContextProgress > 0 && (
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={addingContextProgress} 
-                      sx={{ 
-                        mb: 2, 
-                        height: 8, 
+                    <LinearProgress
+                      variant="determinate"
+                      value={addingContextProgress}
+                      sx={{
+                        mb: 2,
+                        height: 8,
                         borderRadius: 4,
                         bgcolor: 'rgba(124, 77, 255, 0.2)',
                         '& .MuiLinearProgress-bar': {
                           bgcolor: '#7c4dff',
                         }
-                      }} 
+                      }}
                     />
                   )}
                   <Divider sx={{ mb: 2, bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
@@ -542,9 +610,9 @@ export default function Home() {
                       {contextUsed.length > 0 ? `${contextUsed.length} Documents Matched:` : 'No Matched Documents'}
                     </Typography>
                     {contextUsed.map((context, index) => (
-                      <Paper key={index} elevation={1} sx={{ 
-                        p: 2, 
-                        mb: 2, 
+                      <Paper key={index} elevation={1} sx={{
+                        p: 2,
+                        mb: 2,
                         bgcolor: 'rgba(124, 77, 255, 0.1)',
                         borderRadius: '10px',
                       }}>
