@@ -1,6 +1,6 @@
-# Firebase Chat Application
+# ConvoCraft
 
-This project is a real-time chat application built with Next.js, React, and Firebase. It features user authentication, real-time messaging, and streaming responses from an AI assistant.
+This project is a real-time chat application built with Next.js, React, Firebase, and Supabase. It features user authentication, real-time messaging, and streaming responses from an AI assistant.
 
 ## Features
 
@@ -15,7 +15,7 @@ Before you begin, ensure you have met the following requirements:
 
 - Node.js (v14 or later)
 - npm or yarn
-- A Firebase account and project
+- A Firebase and Supabase account and project
 - An OpenAI API key
 
 ## Setup
@@ -24,7 +24,7 @@ Before you begin, ensure you have met the following requirements:
 
    ```
    git clone https://github.com/haru235/ai-chatbot.git
-   cd ai-customer-support
+   cd ai-chatbot
    ```
 
 2. Install dependencies:
